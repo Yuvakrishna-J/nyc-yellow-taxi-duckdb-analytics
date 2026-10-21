@@ -1,44 +1,55 @@
-# NYC Yellow Taxi Trip Analytics (Jan 2023) 🚖
+# NYC Yellow Taxi Analytics: High-Performance DuckDB Pipeline
 
-## Project Overview
-An end-to-end data engineering and business intelligence project analyzing New York City Yellow Taxi trip records for January 2023. This project extracts a massive raw dataset, processes it through a Python-based ETL pipeline, loads it into a relational database, and visualizes key performance indicators (KPIs) in an interactive Power BI executive dashboard.
+## Executive Summary
+An end-to-end data engineering and business intelligence project processing over 3.9 million New York City Yellow Taxi trip records for January 2023. The architecture was deliberately optimized by replacing a legacy Pandas-to-CSV-to-MySQL workflow with a low-latency DuckDB SQL pipeline. This approach processes columnar Parquet files directly, executing data-quality filters in-memory and feeding a cleaned Parquet dataset straight into Power BI for accelerated dashboard rendering.
 
-## Tech Stack
-*   **Data Extraction & Processing:** Python, Pandas
-*   **Database & Storage:** MySQL Workbench
-*   **Data Visualization & BI:** Power BI
-*   **Version Control:** Git & GitHub
+> **Industry Problem:** Legacy taxi analytics pipelines rely on disk-heavy CSV/SQL database conversions that cause severe processing latency, while unrefined fare metrics distort cash flow reporting by mixing actual revenue with dispute write-offs.
+> **Engineered Solution:** This project deploys an in-memory DuckDB SQL pipeline operating directly on columnar Parquet files to eliminate storage bottlenecks, deliver low-latency Power BI reporting, and strictly isolate realized net revenue ($52.87M) from unrealized write-offs.
 
-## Executive Summary & Key Insights
-The analytical dashboard processed millions of rows to reveal the following monthly metrics:
-*   **Total Revenue:** $78.90 Million
-*   **Total Passengers:** 4.00 Million
-*   **Total Distance Covered:** 9.87 Million Miles
-*   **Payment Preferences:** Credit cards overwhelmingly dominated passenger payments, accounting for **$66.28M (84.01%)** of total revenue, while cash payments made up $12.02M (15.23%).
-
-## Dashboard Previews
-
-### Main Executive View
-*(Insert high-level KPI dashboard here)*
-![Main Dashboard](main_dashboard.png)
-
-### Revenue by Payment Type Analysis
-*(Insert breakdown of Credit, Cash, and No-Charge metrics here)*
-| Credit Card Analysis | Cash Analysis | No Charge / Disputes |
-| :---: | :---: | :---: |
-| ![Credit](credit_dash.png) | ![Cash](cash_dash.png) | ![No Charge](no%20charge_dash.png) |
+## Tech Stack & Skills
+* **Data Processing Engine:** DuckDB, Python
+* **Query Language:** SQL
+* **Storage Format:** Parquet (Raw & Cleaned)
+* **Development Environment:** VS Code
+* **Business Intelligence:** Power BI, DAX
 
 ## Data Architecture & Pipeline
+The ETL process is centralized in VS Code, bypassing heavy GUI-based database systems and disk-heavy CSV transformations to eliminate latency. 
 
-1.  **Data Ingestion:** The raw data (`yellow_tripdata_2023-01.parquet`) is sourced from the official TLC Trip Record Data. 
-2.  **ETL Processing:** `convert_parquet.py` utilizes `pandas` to read the columnar parquet data, calculate row counts, and transform it into a flattened CSV format for relational database ingestion.
-3.  **Data Cleaning:** `data_cleaning_script.sql` cleanses null values, handles spatial mapping via `taxi_zone_lookup.csv`, and structures the tables in MySQL.
-4.  **Visualization:** Power BI connects directly to the MySQL database via DirectQuery/Import to build the data model and render the KPIs.
+1. **Data Ingestion:** Raw dataset (`yellow_tripdata_2023-01.parquet`) is sourced from the NYC Taxi & Limousine Commission.
+2. **Transformation & Filtering (`clean_taxi_data.sql`):** Applies strict business logic to eliminate trip anomalies before aggregation:
+   * Trip distances constrained between 0.1 and 150 miles.
+   * Fare amounts restricted to realistic bounds ($0 to $800).
+   * Passenger counts filtered (1 to 8 passengers).
+3. **Execution Pipeline (`taxi_sql_pipeline.py`):** Utilizes DuckDB to execute the SQL filters directly against the raw Parquet file and outputs `cleaned_yellow_tripdata.parquet`.
+4. **Visualization:** Power BI ingests the optimized Parquet file. The business logic specifically segments unrealized revenue (Disputes, No Charges) away from actual cash flow (Credit Card, Cash) for accurate financial reporting.
 
-## How to Reproduce this Project
+## Key Business Metrics
+* **Gross Metered Billings:** $53.31M
+* **Net Revenue:** $52.87M
+* **Total Distance:** 9.87M Miles
+* **Total Passengers:** 3.99M
+* **Payment Method Distribution:**
+  * **Credit Card:** 81.61% ($43.50M)
+  * **Cash:** 17.57% ($9.36M)
+  * **Disputes & No Charges:** 0.54% ($0.29M)
 
-Due to GitHub's file size limits, the raw Parquet and CSV files are not hosted in this repository. To run this project locally:
+## Dashboard Views
 
-1. Clone this repository:
+### Executive Performance Summary
+![Main Dashboard](main_dash_2.png)
+
+### Realized Revenue Analysis: Credit Card vs. Cash
+![Credit Card Analysis](credit_dash.png)
+![Cash Analysis](cash_dash.png)
+
+### Unrealized Revenue & Write-offs: Disputes & No-Charge
+![Dispute Analysis](disput_dash.png)
+![No Charge Analysis](nocharge_dash.png)
+
+## Local Reproduction
+1. Clone the repository and install the required dependencies (`duckdb`, `pandas`, `pyarrow`).
+2. Download the raw `yellow_tripdata_2023-01.parquet` from the official NYC TLC directory into the root folder.
+3. Execute the pipeline in VS Code:
    ```bash
-   git clone [https://github.com/YourUsername/NYC_Taxi_Project.git](https://github.com/YourUsername/NYC_Taxi_Project.git)
+   python taxi_sql_pipeline.py

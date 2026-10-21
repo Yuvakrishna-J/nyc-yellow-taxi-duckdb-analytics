@@ -1,2 +1,6 @@
-Raw_Data/
+# Ignore heavy raw and processed Parquet data files
 *.parquet
+
+# Ignore Windows system garbage
+desktop.ini
+Desktop.ini
