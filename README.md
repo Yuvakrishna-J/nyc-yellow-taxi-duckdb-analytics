@@ -37,7 +37,7 @@ The ETL process is centralized in VS Code, bypassing heavy GUI-based database sy
 ## Dashboard Views
 
 ### Executive Performance Summary
-![Main Dashboard](main_dash_2.png)
+![Main Dashboard](main_dash.png)
 
 ### Realized Revenue Analysis: Credit Card vs. Cash
 ![Credit Card Analysis](credit_dash.png)
